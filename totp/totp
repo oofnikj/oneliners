@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+
+# put this file in your $PATH and mark it executable to generate TOTP from command line
+
+import os
+import sys
+import pyotp
+import pyperclip
+import signal
+
+
+signal.signal(signal.SIGPIPE, signal.SIG_DFL) # handle SIGPIPE gracefully
+
+try:
+    TOTP_SECRET_FILE = os.path.expanduser(sys.argv[1])
+except IndexError:
+    sys.stderr.write(f"Usage: {sys.argv[0]} /path/to/base32_totp_secret\n")
+    exit(1)
+totp = pyotp.TOTP(open(TOTP_SECRET_FILE).read()).now()
+pyperclip.copy(totp)
+print(totp)
