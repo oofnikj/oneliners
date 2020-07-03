@@ -10,7 +10,7 @@ awsp() {
         grep -q -w "\[profile ${1}\]" ~/.aws/config || { echo "No such profile $1"; return 1; }
         export AWS_PROFILE=$1
         # check if we already have valid creds
-        if ! aws sts get-caller-identity 2>&1 >/dev/null; then
+        if ! aws sts get-caller-identity >&- 2>&-; then
             gimme-aws-creds --profile $1
         fi
         # set the prompt
