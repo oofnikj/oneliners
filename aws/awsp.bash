@@ -22,13 +22,23 @@ awsp() {
     fi
 }
 
-_awsp() {
-    COMPREPLY=()
-    local word="${COMP_WORDS[COMP_CWORD]}"
-    if [ "$COMP_CWORD" -eq 1 ]; then
-        COMPREPLY=( $(compgen -W "$(aws configure list-profiles)" -- "$word") )
-    else
-        COMPREPLY=()
-    fi
+## basic bash completion, use fzf completion below instead if available
+# _awsp() {
+#     COMPREPLY=()
+#     local word="${COMP_WORDS[COMP_CWORD]}"
+#     if [ "$COMP_CWORD" -eq 1 ]; then
+#         COMPREPLY=( $(compgen -W "$(aws configure list-profiles)" -- "$word") )
+#     else
+#         COMPREPLY=()
+#     fi
+# }
+# complete -F _awsp awsp
+
+_fzf_complete_awsp() {
+    _fzf_complete --multi --reverse -- "$@" < <(
+        grep -E '\[profile .+]' ~/.aws/config \
+        | sed -E 's/\[profile (.+)\]/\1/g' \
+        | sort
+    )
 }
-complete -F _awsp awsp
+complete -F _fzf_complete_awsp awsp
