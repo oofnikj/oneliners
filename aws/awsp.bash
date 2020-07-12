@@ -41,4 +41,7 @@ _fzf_complete_awsp() {
         | sort
     )
 }
-complete -F _fzf_complete_awsp awsp
+_fzf_complete_awsp_notrigger() {
+    FZF_COMPLETION_TRIGGER='' _fzf_complete_awsp
+}
+complete -F _fzf_complete_awsp_notrigger awsp
