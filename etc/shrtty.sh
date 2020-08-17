@@ -23,7 +23,7 @@ shrtty() {
 }
 
 cleanup() {
-  kill -PIPE %1
+  kill %1
   rm $fifo
 }
 
