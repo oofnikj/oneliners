@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 ###           shrtty            ###
 #   a simple script to share a    #
 #   terminal session over TCP     #
@@ -10,16 +10,18 @@ PORT=${1:-9119}
 shrtty() {
   fifo=$(mktemp -u)
   mkfifo $fifo
-  nc -kl $PORT <$fifo >/dev/null &
+  if [[ $(uname) == "Darwin" ]]; then
+    NC_ARGS="-kl"
+    SCRIPT_ARGS="-qF"
+  else :
+    NC_ARGS="-kl -p"
+    SCRIPT_ARGS="-qf"
+  fi
+  nc $NC_ARGS $PORT <$fifo >/dev/null &
   printf "listening on :$PORT\n"
   printf "connect with 'nc $(hostname) $PORT'\n"
   printf "press ^D to exit\n"
-  PS1='(tc) $PS1'
-  if [[ $(uname) == "Darwin" ]]; then
-    script -qF $fifo
-  else
-    script -qf $fifo
-  fi
+  script $SCRIPT_ARGS $fifo
 }
 
 cleanup() {
