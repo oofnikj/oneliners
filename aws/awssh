@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -e
+# set -x
+
+## Script to use SSH jump host and EC2 instance connect ##
+## to log in to AWS EC2 instances by name.              ##
+
+
+target="${1}"
+bastion_filter="*bastion"
+ssh_pubkey_file=${HOME}/.ssh/id_rsa.pub
+
+_usage() {
+  printf "Usage:\n  $0 ec2_name_tag\n"
+  exit 1
+}
+
+_get_instance_id() {
+  printf "* get ID of host: %s\n" "${1}" >&2
+  aws ec2 describe-instances \
+    --filters "Name=tag:Name,Values=${1}" \
+    --query '[
+        Reservations[].Instances[].InstanceId,
+        Reservations[].Instances[].Placement.AvailabilityZone,
+        Reservations[].Instances[].PrivateDnsName,
+        Reservations[].Instances[].PublicDnsName
+      ]' \
+    --output=text \
+    | awk '{print $1}'
+}
+
+upload_key_to_host() {
+  printf "* upload SSH key to host: %s\n" "${1}" >&2
+  aws ec2-instance-connect send-ssh-public-key \
+    --instance-id "${1}" \
+    --availability-zone "${2}" \
+    --instance-os-user ec2-user \
+    --ssh-public-key "file://${ssh_pubkey_file}"
+}
+
+main() {
+  test ! -z $1 || _usage
+  bastion=($(_get_instance_id "${bastion_filter}"))
+  echo $bastion
+  upload_key_to_host "${bastion[0]}" "${bastion[1]}"
+
+  target=($(_get_instance_id "${1}"))
+  upload_key_to_host "${target[0]}" "${target[1]}"
+  ssh_cmd="ssh -J 'ec2-user@${bastion[3]}' 'ec2-user@${target[2]}'"
+  printf "* execute SSH command: %s\n" "${ssh_cmd}"
+  eval $ssh_cmd
+}
+
+main $@
